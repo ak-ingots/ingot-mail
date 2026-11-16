@@ -16,7 +16,9 @@ backend, the sender of the mail or `MAIL_FROM` by `_get_sender(mail)`); a
 unit lives in the `__init__.py` of its package, as in `ingots.defaults`, and
 a unit, the configs and the errors take the prefix `Mail`, where the name of
 a class of the mail tells it already, `Mail`, `BaseMailer`, `MemoryMailer`.
-The backends are in `contrib/<backend>/` (`contrib/memory/`), each under its
+The backends are in `contrib/<backend>/` (`contrib/memory/`,
+`contrib/aiosmtplib/`, a connection a mail, its errors wrapped in
+`MailDeliveryError`, transient by the reply), each under its
 own extra named after its library when it needs more than the core; a
 contrib gives the class of the slot it fills, the application composes.
 The configs of the environment, of every backend, are in the core
@@ -38,9 +40,10 @@ Everything goes through `make` (run `make` alone for the target list); uv
 provides the environments and interpreters.
 
 ```bash
-make check        # what CI runs: lint, test, coverage, wheel-test, cl-check
+make check        # what CI runs: lint, test, coverage, wheel-test, integration, cl-check
 make lint         # black --check, flake8, mypy --strict
 make test         # unittest on the working tree
+make integration  # the mailer of SMTP against docker-compose.yml, two Mailpits
 make coverage     # the same under coverage; fails below 99%
 make wheel-test   # unittest on the built wheel, PYTHONS="3.14 3.15"
 make format       # black

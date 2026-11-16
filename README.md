@@ -9,7 +9,7 @@ The mail of Ingots applications. An addon of
 [Ingots](https://github.com/ak-ingots/ingots).
 
 **Status:** pre-alpha: the mail and its mailer, the interface of a backend
-with its contract, and the mailer in memory; next, the mailer of SMTP on
+with its contract, the mailer in memory and the mailer of SMTP on
 aiosmtplib.
 
 ## For Consumers
@@ -17,7 +17,8 @@ aiosmtplib.
 ### Install
 
 ```sh
-uv add ingot-mail
+uv add ingot-mail               # the core and the mailer in memory
+uv add "ingot-mail[aiosmtplib]"  # the mailer of SMTP
 ```
 
 ### Integrate
@@ -91,6 +92,28 @@ uv run python -m app settings list    # the configs, MAIL_* among them
 uv run python -m app logging info     # the loggers, ingot_mail among them
 ```
 
+### Send by SMTP
+
+`AiosmtplibMailer` of `ingot_mail.contrib.aiosmtplib`, with the extra
+`aiosmtplib`, sends a mail by the server of `MAIL_SMTP_*`, a connection a
+mail:
+
+```python
+from ingot_mail.contrib.aiosmtplib import AiosmtplibMailer
+
+
+class AppMailUnit(MailUnit):
+    mailer = Slot(AiosmtplibMailer)
+```
+
+It secures the connection by STARTTLS by default, verifying the certificate
+of the server by the roots of the system; `MAIL_SMTP_TLS=TLS` for the port
+465, `NONE` for a server of the tests alone, such as
+[Mailpit](https://mailpit.axllent.org/). A subclass reads other configs by
+its hooks, `_get_host()` and the rest, and verifies by other roots by
+`_get_tls_context()`. The logger `ingot_mail` tells each mail sent by its
+message id, never its addresses nor its text.
+
 ### Send
 
 ```python
@@ -130,6 +153,12 @@ Set as environment variables with the prefix of the project
 |---|---|---|
 | `MAIL_LOGGING_LEVEL` | `INFO` | the level of the logger of the addon, `ingot_mail` |
 | `MAIL_FROM` | `noreply@localhost` | the sender of a mail telling none |
+| `MAIL_SMTP_HOST` | `localhost` | the server of SMTP |
+| `MAIL_SMTP_PORT` | `587` | its port |
+| `MAIL_SMTP_USER` | | the user to log in as; empty, no login |
+| `MAIL_SMTP_PASSWORD` | | its password, hidden in the listings |
+| `MAIL_SMTP_TLS` | `MailSmtpTls.STARTTLS` | how the connection is secured: `STARTTLS`, `TLS` or `NONE` |
+| `MAIL_SMTP_TIMEOUT` | `30.0` | the seconds to wait for the server at each step |
 
 ## Development
 
@@ -138,7 +167,8 @@ interpreters it needs.
 
 ```sh
 make                 # the target list
-make check           # everything CI runs: lint, test, coverage, wheel-test, cl-check
+make check           # everything CI runs: lint, test, coverage, wheel-test, integration, cl-check
+make integration     # the mailer of SMTP against the Mailpits of docker-compose.yml
 make format          # black
 make all             # build the sdist and the wheel into dist/
 ```

@@ -28,6 +28,11 @@ dependencies = [
 repository = "https://github.com/ak-ingots/ingot-mail"
 changelog = "https://github.com/ak-ingots/ingot-mail/blob/main/CHANGELOG.md"
 
+[project.optional-dependencies]
+aiosmtplib = [
+    "aiosmtplib>=5.1.3,<6",
+]
+
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14"]
 build-backend = "uv_build"
@@ -43,6 +48,7 @@ environments = ["sys_platform == 'linux'", "sys_platform == 'darwin'"]
 
 [dependency-groups]
 dev = [
+    "aiosmtplib>=5.1.3,<6",
     "black",
     "coverage",
     "flake8",
