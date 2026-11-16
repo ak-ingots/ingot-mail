@@ -9,13 +9,25 @@ repeat what README or the ADRs say: link to them.
 the mail of its applications. `MailProject` (`project.py`) takes the addon's
 `MailSettingsUnit` (`settings/`) with its `MailConfigs` (`settings/configs.py`,
 named `MAIL_*`), its `MailLoggingUnit` (`logging/`, the logger `ingot_mail`)
-and `MailUnit` (`mail/`, the mail, empty yet); a unit lives in the
-`__init__.py` of its package, as in `ingots.defaults`, and a class takes the
-prefix `Mail`, so that an application imports it under its own name.
-Sending comes first; what user code writes against is the addon's own
-abstraction, the protocols and the providers its backends.
+and `MailUnit` (`mail/`, the mail of the project: `Mail` in `data.py`, the
+errors in `errors.py`, `BaseMailer` in `mailers.py`, the facade of the slot
+`mailer`, abstract, its final `send()` refusing a header unfit before the
+backend, the sender of the mail or `MAIL_FROM` by `_get_sender(mail)`); a
+unit lives in the `__init__.py` of its package, as in `ingots.defaults`, and
+a unit, the configs and the errors take the prefix `Mail`, where the name of
+a class of the mail tells it already, `Mail`, `BaseMailer`, `MemoryMailer`.
+The backends are in `contrib/<backend>/` (`contrib/memory/`), each under its
+own extra named after its library when it needs more than the core; a
+contrib gives the class of the slot it fills, the application composes.
+The configs of the environment, of every backend, are in the core
+`MailConfigs`. `testing/contracts/` holds the guarantees of the addon as
+tests a consumer runs (ADR 0005), `MailerContract` run on every backend.
+The addon is for sending mail: its API is that of the mail, assuming
+nothing of the addons that use it. Its design is `docs/design/mail/` of
+the meta repository.
 `tests/test_readme.py` runs the README for consumers.
-`python -m ingot_mail` runs the addon on its own (prefix `INGOT`). A
+`python -m ingot_mail` runs the addon on its own (prefix `INGOT`) with the
+mailer in memory. A
 library (ADR 0003), Python >= 3.14, part of the
 [ak-ingots](https://github.com/ak-ingots) ecosystem; the meta repository
 `ingots-libs` holds the ecosystem-wide decisions in `docs/adr/`.

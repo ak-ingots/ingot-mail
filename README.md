@@ -8,8 +8,9 @@
 The mail of Ingots applications. An addon of
 [Ingots](https://github.com/ak-ingots/ingots).
 
-**Status:** pre-alpha: the skeleton, its project with the settings, the
-logging and the mail units; nothing is sent yet.
+**Status:** pre-alpha: the mail and its mailer, the interface of a backend
+with its contract, and the mailer in memory; next, the mailer of SMTP on
+aiosmtplib.
 
 ## For Consumers
 
@@ -29,7 +30,9 @@ each takes the class of the addon among its bases:
 import typing as t
 
 from ingot_mail import MailProject
+from ingot_mail.contrib.memory import MemoryMailer
 from ingot_mail.logging import MailLoggingUnit
+from ingot_mail.mail import MailUnit
 from ingot_mail.settings import MailSettingsUnit
 from ingot_mail.settings.configs import MailConfigs
 from ingots.puer import Slot
@@ -47,11 +50,20 @@ class AppLoggingUnit(MailLoggingUnit):
     project: "AppProject"
 
 
+class AppMailUnit(MailUnit):
+    mailer = Slot(MemoryMailer)
+
+
 class AppProject(MailProject):
     env_configs_prefix = "APP"
     settings = Slot(AppSettingsUnit)
     logging = Slot(AppLoggingUnit)
+    mail = Slot(AppMailUnit)
 ```
+
+The slot `mailer` of `MailUnit` is abstract: the application declares a
+backend. `MemoryMailer` delivers nothing and keeps the mail for the tests,
+`get_sent()`.
 
 With other addons, their classes join the same bases:
 `class AppConfigs(MailConfigs, MongoDbConfigs)`, and so on, as the
@@ -79,6 +91,36 @@ uv run python -m app settings list    # the configs, MAIL_* among them
 uv run python -m app logging info     # the loggers, ingot_mail among them
 ```
 
+### Send
+
+```python
+from ingot_mail.mail import Mail
+
+mail = Mail(to=("al@b.c",), subject="Welcome", text="Hello, Al!\n")
+await self.project.mail.mailer.send(mail)
+```
+
+A mail is from its `sender`, or from `MAIL_FROM` when it tells none. A
+header unfit to send, an empty one, or one with a line break, which would
+inject another header, is refused before the backend by `MailHeaderError`;
+a mail the server did not take is `MailDeliveryError`, `is_transient` when
+sending it again later may succeed. The retry is the caller's.
+
+### Test a backend
+
+A backend runs the contract of the mailer, `MailerContract` of
+`ingot_mail.testing.contracts`, telling the project and where its mail is
+read back:
+
+```python
+class AppMailerTestCase(MailerContract, unittest.IsolatedAsyncioTestCase):
+    async def create_project(self) -> MailProject:
+        return AppProject()
+
+    async def get_delivered(self) -> tuple[Mail, ...]:
+        ...
+```
+
 ### Configs
 
 Set as environment variables with the prefix of the project
@@ -87,6 +129,7 @@ Set as environment variables with the prefix of the project
 | Name | Default | Meaning |
 |---|---|---|
 | `MAIL_LOGGING_LEVEL` | `INFO` | the level of the logger of the addon, `ingot_mail` |
+| `MAIL_FROM` | `noreply@localhost` | the sender of a mail telling none |
 
 ## Development
 
