@@ -15,6 +15,9 @@ SRC := ingot_mail tests
 # matrix in .github/workflows/ci.yml.
 PYTHONS ?= 3.14 3.15
 
+# The extras the tests of the wheel install it with.
+EXTRAS ?= aiosmtplib
+
 # What `cl-check` compares the branch with.
 AGAINST ?= origin/main
 
@@ -23,7 +26,7 @@ AGAINST ?= origin/main
 
 # The `ci` workflow runs exactly these targets, one per job.
 .PHONY: check
-check: lint test coverage wheel-test cl-check  ## Every check: lint, test, coverage, wheel-test, cl-check
+check: lint test coverage wheel-test integration cl-check  ## Every check: lint, test, coverage, wheel-test, integration, cl-check
 
 .PHONY: lint
 lint:  ## black --check, flake8, mypy --strict
@@ -40,6 +43,13 @@ coverage:  ## unittest on the working tree under coverage; fails below 99%
 	uv run coverage run -m unittest discover -s tests -t .
 	uv run coverage report
 
+# It needs Docker; a contributor without it runs the other targets of `check`.
+.PHONY: integration
+integration:  ## tests.test_mailpit against the Mailpits of docker-compose.yml
+	trap 'docker compose down --volumes --timeout 1' EXIT; \
+		docker compose up --detach --wait --quiet-pull; \
+		INGOT_MAIL_TEST_MAILPIT=1 uv run python -m unittest -v tests.test_mailpit
+
 # ADR 0003: the tests run against the built wheel, installed into a fresh
 # virtualenv, from a copy of tests/ outside the repository, so the package can
 # be imported only from the wheel.
@@ -50,14 +60,18 @@ wheel-test: all  ## unittest on the built wheel, once per interpreter in PYTHONS
 # The tests of tests/ on WHEEL, once per interpreter in PYTHONS: for `wheel-test`
 # and for the workflow `index-test` of the meta repository, which the `release`
 # workflow calls between TestPyPI and PyPI, on the files it has just published.
+# The Mailpits of docker-compose.yml run tests.test_mailpit too.
 .PHONY: installed-test
 installed-test:
 	@test -n "$(WHEEL)" || { echo "WHEEL=path/to.whl is required"; exit 1; }
-	@for py in $(PYTHONS); do \
+	@trap 'docker compose down --volumes --timeout 1' EXIT; \
+	docker compose up --detach --wait --quiet-pull; \
+	export INGOT_MAIL_TEST_MAILPIT=1; \
+	for py in $(PYTHONS); do \
 		echo "== $(notdir $(WHEEL)) on Python $$py"; \
 		tmp=$$(mktemp -d); \
 		uv venv --quiet --python $$py "$$tmp/venv"; \
-		uv pip install --quiet --python "$$tmp/venv/bin/python" "$(WHEEL)"; \
+		uv pip install --quiet --python "$$tmp/venv/bin/python" "$(WHEEL)[$(EXTRAS)]"; \
 		cp -r tests README.md "$$tmp/"; \
 		(cd "$$tmp" && INGOT_MAIL_WHEEL_TEST=1 venv/bin/python -m unittest discover -s tests -t .) \
 			|| { rm -rf "$$tmp"; exit 1; }; \
@@ -107,4 +121,4 @@ help:  ## Show this help
 		/^##@ / {printf "\n%s\n", substr($$0, 5); next} \
 		/^[a-z][a-zA-Z0-9_-]*:.*## / {printf "  %-12s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo
-	@echo "Variables: PYTHONS, AGAINST, VERSION"
+	@echo "Variables: PYTHONS, EXTRAS, AGAINST, VERSION"

@@ -1,0 +1,26 @@
+# The Mailpits of the integration tests: `make integration` starts them, runs
+# tests.test_mailpit against them and stops them. `mailpit` takes the mail in
+# the clear; `mailpit-tls` requires STARTTLS, on a certificate of its own, and
+# a login. Each delivers nothing and tells what it took by its HTTP API.
+services:
+  mailpit:
+    image: axllent/mailpit:v1.33
+    ports:
+      - "127.0.0.1:${INGOT_MAIL_TEST_SMTP_PORT:-11025}:1025"
+      - "127.0.0.1:${INGOT_MAIL_TEST_HTTP_PORT:-18025}:8025"
+    healthcheck: &ready
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  mailpit-tls:
+    image: axllent/mailpit:v1.33
+    ports:
+      - "127.0.0.1:${INGOT_MAIL_TEST_TLS_SMTP_PORT:-11026}:1025"
+      - "127.0.0.1:${INGOT_MAIL_TEST_TLS_HTTP_PORT:-18026}:8025"
+    environment:
+      MP_SMTP_TLS_CERT: "sans:localhost"
+      MP_SMTP_TLS_KEY: "sans:localhost"
+      MP_SMTP_REQUIRE_STARTTLS: "true"
+      MP_SMTP_AUTH: "ingot:p@ss:w/rd"
+    healthcheck: *ready
