@@ -90,4 +90,5 @@ def read_mail(data: bytes) -> Mail:
         subject=str(message["Subject"]),
         text=text,
         sender=str(message["From"]),
+        headers={name: str(value) for name, value in message.items()},
     )

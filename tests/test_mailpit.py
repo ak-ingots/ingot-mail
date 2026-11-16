@@ -6,6 +6,7 @@ login, the mail read back by the HTTP API of Mailpit.
 """
 
 import asyncio
+import email.header
 import json
 import os
 import ssl
@@ -81,12 +82,16 @@ class MailpitMixin(TestCase):
         delivered = []
         for item in reversed(listed["messages"]):  # the newest first
             message = await self.call_api("GET", f"message/{item['ID']}")
+            headers = await self.call_api("GET", f"message/{item['ID']}/headers")
             delivered.append(
                 Mail(
                     to=tuple(to["Address"] for to in message["To"]),
                     subject=message["Subject"],
                     text=message["Text"].replace("\r\n", "\n"),
                     sender=message["From"]["Address"],
+                    headers={
+                        name: _decode(values[-1]) for name, values in headers.items()
+                    },
                 )
             )
         return tuple(delivered)
@@ -135,3 +140,8 @@ class MailpitTlsTestCase(
         with self.assertRaises(MailDeliveryError) as caught:
             await project.mail.mailer.send(Mail(to=("al@b.c",), subject="Hi", text=""))
         self.assertFalse(caught.exception.is_transient)
+
+
+def _decode(value: str) -> str:
+    """A header as Mailpit tells it, its words of RFC 2047 decoded."""
+    return str(email.header.make_header(email.header.decode_header(value)))

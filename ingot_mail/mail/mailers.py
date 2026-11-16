@@ -16,6 +16,26 @@ from .errors import MailHeaderError
 if t.TYPE_CHECKING:
     from ingot_mail.project import MailProject
 
+# The headers a mailer sets, or that tell where a mail goes: a mail may not
+# set them by its own headers, in any case of the letters.
+RESERVED_HEADERS: t.Final = frozenset(
+    {
+        "bcc",
+        "cc",
+        "content-transfer-encoding",
+        "content-type",
+        "date",
+        "from",
+        "message-id",
+        "mime-version",
+        "sender",
+        "subject",
+        "to",
+    }
+)
+# The letters of the name of a header: printable ASCII but the colon.
+HEADER_NAME_LETTERS: t.Final = frozenset(map(chr, range(33, 127))) - {":"}
+
 
 class BaseMailer(Entity):
     """
@@ -31,8 +51,9 @@ class BaseMailer(Entity):
         Delivers a mail from its sender, or from that of the mailer.
 
         :raises MailHeaderError: no sender or no address, or a character
-            not printable, a line break for one, in the sender, an address or
-            the subject.
+            not printable, a line break for one, in the sender, an address,
+            the subject or a header of the mail; a header of the mailer, or
+            a name of a header not of printable ASCII.
         :raises MailDeliveryError: the server did not take it.
         """
         sender = self._get_sender(mail)
@@ -42,6 +63,14 @@ class BaseMailer(Entity):
             raise MailHeaderError.for_header("to")
         if not mail.subject.isprintable():
             raise MailHeaderError.for_header("subject")
+        for name, value in mail.headers.items():
+            if (
+                not name
+                or not HEADER_NAME_LETTERS.issuperset(name)
+                or name.lower() in RESERVED_HEADERS
+                or not value.isprintable()
+            ):
+                raise MailHeaderError.for_header(name)
         await self._send(mail, sender)
 
     def _get_sender(self, mail: Mail) -> str:
