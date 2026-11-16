@@ -9,6 +9,11 @@ class MailTestCase(unittest.TestCase):
         mail = Mail(to=("al@b.c",), subject="Your code", text="123456", sender="h@b.c")
         self.assertEqual(repr(mail), "Mail(subject='Your code')")
 
+    def test_a_mail_with_headers_hides_them_and_is_hashed_without(self) -> None:
+        mail = Mail(to=("al@b.c",), subject="Hi", text="", headers={"X-A": "1"})
+        self.assertEqual(repr(mail), "Mail(subject='Hi')")
+        self.assertEqual(hash(mail), hash(Mail(to=("al@b.c",), subject="Hi", text="")))
+
 
 class ErrorsTestCase(unittest.TestCase):
     def test_a_header_error_names_its_header(self) -> None:

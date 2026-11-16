@@ -37,6 +37,8 @@ class AiosmtplibMailer(BaseMailer):
         try:
             refused, _ = await aiosmtplib.send(
                 message,
+                sender=sender,
+                recipients=list(mail.to),
                 hostname=self._get_host(),
                 port=self._get_port(),
                 username=user or None,
@@ -84,6 +86,8 @@ class AiosmtplibMailer(BaseMailer):
         )
         domain = sender.rpartition("@")[2] or None
         message["Message-ID"] = email.utils.make_msgid(domain=domain)
+        for name, value in mail.headers.items():
+            message[name] = value
         message.set_content(mail.text)
         return message
 

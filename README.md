@@ -123,7 +123,10 @@ mail = Mail(to=("al@b.c",), subject="Welcome", text="Hello, Al!\n")
 await self.project.mail.mailer.send(mail)
 ```
 
-A mail is from its `sender`, or from `MAIL_FROM` when it tells none. A
+A mail is from its `sender`, or from `MAIL_FROM` when it tells none. Its
+`headers` are the application's own, `{"X-Request-ID": request_id}` for one;
+those the mailer sets, `From`, `To`, `Subject`, `Date`, `Message-ID`, the
+copies and the content, it may not. A
 header unfit to send, an empty one, or one with a line break, which would
 inject another header, is refused before the backend by `MailHeaderError`;
 a mail the server did not take is `MailDeliveryError`, `is_transient` when

@@ -26,7 +26,10 @@ class MailHeaderError(MailError, ValueError):
 
     @property
     def header(self) -> str:
-        """The name of the header: ``sender``, ``to`` or ``subject``."""
+        """
+        The name of the header: ``sender``, ``to``, ``subject``, or that of
+        a header of the mail as it tells it.
+        """
         return t.cast(str, self.args[1])
 
 
