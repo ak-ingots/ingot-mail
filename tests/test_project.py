@@ -43,6 +43,7 @@ class ProjectTestCase(unittest.TestCase):
         code, out = self.run_project("settings", "list")
         self.assertEqual(code, 0)
         self.assertIn("MAIL_LOGGING_LEVEL = DEBUG\n", out)
+        self.assertIn("MAIL_FROM = noreply@localhost\n", out)
 
     def test_the_logging_has_the_logger_of_the_addon(self) -> None:
         code, out = self.run_project(
