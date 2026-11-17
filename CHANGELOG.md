@@ -2,6 +2,10 @@
 
 <!-- towncrier release notes start -->
 
+## [0.3.0] - 2026-11-17
+### Changed
+- Moved on to ingots 0.35.
+
 ## [0.2.0] - 2026-11-16
 ### Added
 - The mail and its mailer: `Mail`, a mail of plain text, its addresses and its
