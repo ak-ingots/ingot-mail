@@ -78,6 +78,9 @@ installed-test:
 		rm -rf "$$tmp"; \
 	done
 
+
+##@ Code
+
 .PHONY: format
 format:  ## Format code with black
 	uv run black $(SRC)
