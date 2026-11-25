@@ -1,7 +1,6 @@
-# The Mailpits of the integration tests: `make integration` starts them, runs
-# tests.test_mailpit against them and stops them. `mailpit` takes the mail in
-# the clear; `mailpit-tls` requires STARTTLS, on a certificate of its own, and
-# a login. Each delivers nothing and tells what it took by its HTTP API.
+# `mailpit` takes the mail in the clear; `mailpit-tls` requires STARTTLS, on
+# a certificate of its own, and a login. Each delivers nothing and tells
+# what it took by its HTTP API.
 services:
   mailpit:
     image: axllent/mailpit:v1.33

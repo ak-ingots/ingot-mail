@@ -1,9 +1,3 @@
-# Development entrypoint (uv):
-#
-#   make              show the target list
-#   make check        everything the `ci` workflow runs
-#   make all          build the distributions into dist/
-
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := help
@@ -11,20 +5,15 @@ SHELL := /bin/bash
 
 SRC := ingot_mail tests
 
-# Supported interpreters: keep in step with the classifiers and the `wheel`
-# matrix in .github/workflows/ci.yml.
 PYTHONS ?= 3.14 3.15
 
-# The extras the tests of the wheel install it with.
 EXTRAS ?= aiosmtplib
 
-# What `cl-check` compares the branch with.
 AGAINST ?= origin/main
 
 
 ##@ Checks
 
-# The `ci` workflow runs exactly these targets, one per job.
 .PHONY: check
 check: lint test coverage wheel-test integration cl-check  ## Every check: lint, test, coverage, wheel-test, integration, cl-check
 
@@ -43,16 +32,12 @@ coverage:  ## unittest on the working tree under coverage; fails below 99%
 	uv run coverage run -m unittest discover -s tests -t .
 	uv run coverage report
 
-# It needs Docker; a contributor without it runs the other targets of `check`.
 .PHONY: integration
 integration:  ## tests.test_mailpit against the Mailpits of docker-compose.yml
 	trap 'docker compose down --volumes --timeout 1' EXIT; \
 		docker compose up --detach --wait --quiet-pull; \
 		INGOT_MAIL_TEST_MAILPIT=1 uv run python -m unittest -v tests.test_mailpit
 
-# ADR 0003: the tests run against the built wheel, installed into a fresh
-# virtualenv, from a copy of tests/ outside the repository, so the package can
-# be imported only from the wheel.
 .PHONY: wheel-test
 wheel-test: all  ## unittest on the built wheel, once per interpreter in PYTHONS
 	@$(MAKE) --no-print-directory installed-test WHEEL="$$(echo dist/*.whl)"
@@ -60,7 +45,6 @@ wheel-test: all  ## unittest on the built wheel, once per interpreter in PYTHONS
 # The tests of tests/ on WHEEL, once per interpreter in PYTHONS: for `wheel-test`
 # and for the workflow `index-test` of the meta repository, which the `release`
 # workflow calls between TestPyPI and PyPI, on the files it has just published.
-# The Mailpits of docker-compose.yml run tests.test_mailpit too.
 .PHONY: installed-test
 installed-test:
 	@test -n "$(WHEEL)" || { echo "WHEEL=path/to.whl is required"; exit 1; }
