@@ -33,7 +33,6 @@ RESERVED_HEADERS: t.Final = frozenset(
         "to",
     }
 )
-# The letters of the name of a header: printable ASCII but the colon.
 HEADER_NAME_LETTERS: t.Final = frozenset(map(chr, range(33, 127))) - {":"}
 
 
