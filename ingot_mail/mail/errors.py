@@ -20,6 +20,8 @@ class MailHeaderError(MailError, ValueError):
     another header.
     """
 
+    args: tuple[str, str]
+
     @classmethod
     def for_header(cls, name: str) -> t.Self:
         return cls(f"a header unfit to send: {name}", name)
@@ -30,7 +32,7 @@ class MailHeaderError(MailError, ValueError):
         The name of the header: ``sender``, ``to``, ``subject``, or that of
         a header of the mail as it tells it.
         """
-        return t.cast(str, self.args[1])
+        return self.args[1]
 
 
 class MailDeliveryError(MailError):
@@ -40,14 +42,16 @@ class MailDeliveryError(MailError):
     the caller's. A backend raises it from the error of its library.
     """
 
+    args: tuple[str, str, bool]
+
     @classmethod
     def for_reason(cls, reason: str, *, is_transient: bool) -> t.Self:
         return cls(f"a mail not delivered: {reason}", reason, is_transient)
 
     @property
     def reason(self) -> str:
-        return t.cast(str, self.args[1])
+        return self.args[1]
 
     @property
     def is_transient(self) -> bool:
-        return t.cast(bool, self.args[2])
+        return self.args[2]
