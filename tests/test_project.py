@@ -12,7 +12,7 @@ from ingot_mail.mail import MailUnit
 from ingot_mail.settings import MailSettingsUnit
 from ingot_mail.settings.configs import MailConfigs
 from ingots.defaults import Project
-from ingots.puer.cli import CommandRunner
+from ingots.defaults.cli import CommandRunner
 
 
 class ProjectTestCase(unittest.TestCase):
